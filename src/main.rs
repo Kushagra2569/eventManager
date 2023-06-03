@@ -8,15 +8,16 @@
     and the users are mapped via a unique id that link users table to events table
 */
 use axum::{
-    extract::Json,
+    extract::{rejection::JsonRejection, Json},
     routing::{get, post},
     Router,
 };
 use serde::Deserialize;
+use serde_json::{json, Value};
 
 #[derive(Deserialize)]
 struct User {
-    name: String,
+    user: String,
     email: String,
 }
 
@@ -42,6 +43,13 @@ pub async fn fallback_handler(uri: axum::http::Uri) -> impl axum::response::Into
     )
 }
 
-async fn login() -> Result<String, ()> {
-    Ok("logged in".to_string())
+async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, ()> {
+    if let Ok(payload) = payload {
+        let value = json!(*payload);
+        println!("user: {}, id {}", value["user"], value["id"]);
+        println!("value: {:?}", value);
+        let user: User = serde_json::from_value(value).unwrap();
+        println!("user: {}", user.user);
+    }
+    Ok("User logged in".to_string())
 }
