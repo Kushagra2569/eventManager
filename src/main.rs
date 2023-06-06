@@ -1,6 +1,4 @@
-/* Event management application with ability to have unique users through sign up and login
-    and ability to create events and invite other users to the event with specific date for the event
-    as well as dashboard for each user to see the events they are invited to and the events they created
+/* Event management application with ability to have unique users through sign up and login and ability to create events and invite other users to the event with specific date for the event as well as dashboard for each user to see the events they are invited to and the events they created
     and the ability to accept or decline the invitation to the event
     and the ability to delete the event they created
     and the ability to see the users that accepted the invitation to the event they created
@@ -45,11 +43,28 @@ pub async fn fallback_handler(uri: axum::http::Uri) -> impl axum::response::Into
 
 async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, ()> {
     if let Ok(payload) = payload {
-        let value = json!(*payload);
-        println!("user: {}, id {}", value["user"], value["id"]);
-        println!("value: {:?}", value);
-        let user: User = serde_json::from_value(value).unwrap();
-        println!("user: {}", user.user);
+        let user_data: User;
+        let mut value = json!(*payload);
+        //TODO check if the value is an object and return a proper error
+        if !value.is_object() {
+            return Err(());
+        }
+        let value_obj = value.as_object_mut().unwrap();
+        if !value_obj.contains_key("user") || !value_obj.contains_key("email") {
+            return Err(());
+        }
+        user_data = User {
+            user: value_obj.get("user").unwrap().as_str().unwrap().to_string(),
+            email: value_obj
+                .get("email")
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string(),
+        };
+        //TODO using get method above even though already checked for key existence
+        println!("User: {}", user_data.user);
     }
+
     Ok("User logged in".to_string())
 }
