@@ -12,21 +12,14 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use serde::Deserialize;
 use serde_json::{json, Value};
 
-#[derive(Deserialize)]
-struct User {
-    user: String,
-    email: String,
-    id: u64,
-}
-
-struct Event {
-    name: String,
-    date: String,
-    id: u64,
-}
+mod utils;
+use utils::{
+    db,
+    structs::{Event, User, UserLogin},
+};
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() {
@@ -54,30 +47,36 @@ pub async fn fallback_handler(uri: axum::http::Uri) -> impl axum::response::Into
 
 async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, ()> {
     if let Ok(payload) = payload {
-        let user_data: User;
+        let user_data: UserLogin;
         let mut value = json!(*payload);
         //TODO check if the value is an object and return a proper error
         if !value.is_object() {
             return Err(());
         }
         let value_obj = value.as_object_mut().unwrap();
-        if !value_obj.contains_key("user") || !value_obj.contains_key("email") {
+        if !value_obj.contains_key("username") || !value_obj.contains_key("password") {
             return Err(());
         }
-        user_data = User {
-            user: value_obj.get("user").unwrap().as_str().unwrap().to_string(),
-            email: value_obj
+        user_data = UserLogin {
+            username: value_obj
+                .get("username")
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string(),
+            password: value_obj
                 .get("email")
                 .unwrap()
                 .as_str()
                 .unwrap()
                 .to_string(),
-            id: value_obj.get("id").unwrap().as_u64().unwrap(),
+            id: "0".to_string(),
+            email: "not Applicable".to_string(),
         };
         //TODO using get method above even though already checked for key existence
         println!(
             "User: {} email: {} id {}",
-            user_data.user, user_data.email, user_data.id
+            user_data.username, user_data.email, user_data.id
         );
     }
 
@@ -86,32 +85,54 @@ async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, ()
 
 async fn sign_up(payload: Result<Json<Value>, JsonRejection>) -> Result<String, ()> {
     if let Ok(payload) = payload {
-        let user_data: User;
+        let user_data: UserLogin;
         let mut value = json!(*payload);
         //TODO check if the value is an object and return a proper error
         if !value.is_object() {
             return Err(());
         }
         let value_obj = value.as_object_mut().unwrap();
-        if !value_obj.contains_key("user") || !value_obj.contains_key("email") {
+        if (!value_obj.contains_key("username") || !value_obj.contains_key("email"))
+            || !value_obj.contains_key("password")
+        {
             return Err(());
         }
-        user_data = User {
-            user: value_obj.get("user").unwrap().as_str().unwrap().to_string(),
+        user_data = UserLogin {
+            username: value_obj
+                .get("username")
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string(),
             email: value_obj
                 .get("email")
                 .unwrap()
                 .as_str()
                 .unwrap()
                 .to_string(),
-            id: value_obj.get("id").unwrap().as_u64().unwrap(),
+            password: value_obj
+                .get("password")
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string(),
+            id: Uuid::new_v4().as_simple().to_string(),
         };
         //TODO using get method above even though already checked for key existence
-        println!("User: {} email: {}", user_data.user, user_data.email);
+
+        println!("User: {} email: {}", user_data.username, user_data.email);
+        let connection = db::connect_db().await.unwrap();
+        println!("Connected to db");
+        let result = db::insert_user(connection, &user_data).await;
+
+        if result.is_err() {
+            println!("{:?}", result.err().unwrap());
+        }
     }
 
     Ok("User Signed up".to_string())
 }
+
 async fn create_event(payload: Result<Json<Value>, JsonRejection>) -> Result<String, ()> {
     if let Ok(payload) = payload {
         let event_data: Event;
@@ -127,7 +148,7 @@ async fn create_event(payload: Result<Json<Value>, JsonRejection>) -> Result<Str
         event_data = Event {
             name: value_obj.get("name").unwrap().as_str().unwrap().to_string(),
             date: value_obj.get("date").unwrap().as_str().unwrap().to_string(),
-            id: value_obj.get("id").unwrap().as_u64().unwrap(),
+            id: Uuid::new_v4().as_simple().to_string(),
         };
         //TODO using get method above even though already checked for key existence
         println!("name: {} date: {}", event_data.name, event_data.date);
