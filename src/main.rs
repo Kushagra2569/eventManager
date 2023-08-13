@@ -45,17 +45,17 @@ pub async fn fallback_handler(uri: axum::http::Uri) -> impl axum::response::Into
     )
 }
 
-async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, ()> {
+async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
     if let Ok(payload) = payload {
         let user_data: UserLogin;
         let mut value = json!(*payload);
         //TODO check if the value is an object and return a proper error
         if !value.is_object() {
-            return Err(());
+            return Err("Invalid JSON".to_string());
         }
         let value_obj = value.as_object_mut().unwrap();
         if !value_obj.contains_key("username") || !value_obj.contains_key("password") {
-            return Err(());
+            return Err("Invalid JSON".to_string());
         }
         user_data = UserLogin {
             username: value_obj
@@ -65,7 +65,7 @@ async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, ()
                 .unwrap()
                 .to_string(),
             password: value_obj
-                .get("email")
+                .get("password")
                 .unwrap()
                 .as_str()
                 .unwrap()
@@ -74,28 +74,32 @@ async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, ()
             email: "not Applicable".to_string(),
         };
         //TODO using get method above even though already checked for key existence
-        println!(
-            "User: {} email: {} id {}",
-            user_data.username, user_data.email, user_data.id
-        );
+        let connection = db::connect_db().await.unwrap();
+        println!("Connected to db");
+        let result = db::login_user(connection, &user_data).await;
+
+        if result.is_err() {
+            println!("{:?}", result.err().unwrap());
+            return Err("Error inserting user".to_string());
+        }
     }
 
     Ok("User logged in".to_string())
 }
 
-async fn sign_up(payload: Result<Json<Value>, JsonRejection>) -> Result<String, ()> {
+async fn sign_up(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
     if let Ok(payload) = payload {
         let user_data: UserLogin;
         let mut value = json!(*payload);
         //TODO check if the value is an object and return a proper error
         if !value.is_object() {
-            return Err(());
+            return Err("Invalid payload".to_string());
         }
         let value_obj = value.as_object_mut().unwrap();
         if (!value_obj.contains_key("username") || !value_obj.contains_key("email"))
             || !value_obj.contains_key("password")
         {
-            return Err(());
+            return Err("Invalid payload".to_string());
         }
         user_data = UserLogin {
             username: value_obj
@@ -127,6 +131,7 @@ async fn sign_up(payload: Result<Json<Value>, JsonRejection>) -> Result<String, 
 
         if result.is_err() {
             println!("{:?}", result.err().unwrap());
+            return Err("Error inserting user".to_string());
         }
     }
 

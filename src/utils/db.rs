@@ -55,3 +55,18 @@ pub async fn insert_user(
         return Err("Error inserting user into userlogin table".to_string());
     }
 }
+
+pub async fn login_user(
+    conn: Pool<sqlx::Postgres>,
+    user_login: &UserLogin,
+) -> Result<String, String> {
+    let query1 = sqlx::query("SELECT * FROM userlogin WHERE username = $1")
+        .bind(&user_login.username)
+        .execute(&conn)
+        .await;
+
+    //TODO check for query error if user is not present
+    //if user is present, check password
+
+    Ok("".to_string())
+}
