@@ -1,9 +1,6 @@
 use super::structs::{User, UserLogin};
 use dotenv::dotenv;
-use sqlx::{
-    postgres::{PgPoolOptions, PgRow},
-    Pool,
-};
+use sqlx::{postgres::PgPoolOptions, Pool, Row};
 use std::env;
 
 pub async fn connect_db() -> Result<Pool<sqlx::Postgres>, sqlx::Error> {
@@ -62,11 +59,25 @@ pub async fn login_user(
 ) -> Result<String, String> {
     let query1 = sqlx::query("SELECT * FROM userlogin WHERE username = $1")
         .bind(&user_login.username)
-        .execute(&conn)
+        .fetch_one(&conn)
         .await;
 
-    //TODO check for query error if user is not present
-    //if user is present, check password
+    if query1.is_ok() {
+        let row = query1.unwrap();
+        let pass = row.get::<String, &str>("password");
+        if pass == user_login.password {
+            return Ok("login successful".to_string());
+        } else {
+            return Err("password incorrect".to_string());
+        }
+    } else {
+        return Err("username not found".to_string());
+    }
 
-    Ok("".to_string())
+    //TODO check for query error if user is not present
+    //TODO return user object mapped from userlogin and user tables
+}
+
+pub async fn create_event(conn: Pool<sqlx::Postgres>, event: &Event) -> Result<String, String> {
+    Ok("ok");
 }

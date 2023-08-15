@@ -79,8 +79,10 @@ async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, St
         let result = db::login_user(connection, &user_data).await;
 
         if result.is_err() {
-            println!("{:?}", result.err().unwrap());
-            return Err("Error inserting user".to_string());
+            return Err("Invalid credentials".to_string());
+        }
+        if result.is_ok() {
+            return Ok("User logged in".to_string());
         }
     }
 
