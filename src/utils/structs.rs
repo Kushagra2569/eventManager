@@ -1,3 +1,4 @@
+use chrono::prelude::*;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -16,6 +17,7 @@ pub struct UserLogin {
 
 pub struct Event {
     pub name: String,
-    pub date: String,
+    pub date: DateTime<Utc>,
     pub id: String,
+    pub owner_id: String,
 }

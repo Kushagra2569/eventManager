@@ -81,5 +81,38 @@ pub async fn login_user(
 }
 
 pub async fn create_event(conn: Pool<sqlx::Postgres>, event: &Event) -> Result<String, String> {
+    let query1 = sqlx::query(
+        "INSERT INTO events (event_id, event_name, event_date, owner_id) VALUES ($1, $2, $3, $4)",
+    )
+    .bind(&event.id)
+    .bind(&event.name)
+    .bind(&event.date)
+    .bind(&event.owner_id)
+    .execute(&conn)
+    .await;
+
+    if query1.is_err() {
+        println!("{:?}", query1);
+        return Err("Error inserting event into events table".to_string());
+    }
+
+    if query1.is_ok() {
+        let query2 = sqlx::query("INSERT INTO event_users (event_id, user_id) VALUES ($1, $2)")
+            .bind(&event.id)
+            .bind(&event.owner_id)
+            .execute(&conn)
+            .await;
+
+        if query2.is_ok() {
+            return Ok("ok".to_string());
+        } else {
+            let _ = sqlx::query("DELETE FROM events WHERE event_id = $1")
+                .bind(&event.id)
+                .execute(&conn)
+                .await;
+            return Err("Error inserting event into event_users table".to_string());
+        }
+    }
+
     Ok("ok".to_string())
 }

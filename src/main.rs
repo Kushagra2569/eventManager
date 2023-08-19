@@ -15,6 +15,7 @@ use axum::{
 use serde_json::{json, Value};
 
 mod utils;
+use chrono::prelude::*;
 use utils::{
     db,
     structs::{Event, User, UserLogin},
@@ -140,25 +141,38 @@ async fn sign_up(payload: Result<Json<Value>, JsonRejection>) -> Result<String, 
     Ok("User Signed up".to_string())
 }
 
-async fn create_event(payload: Result<Json<Value>, JsonRejection>) -> Result<String, ()> {
+async fn create_event(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
     if let Ok(payload) = payload {
         let event_data: Event;
         let mut value = json!(*payload);
         //TODO check if the value is an object and return a proper error
         if !value.is_object() {
-            return Err(());
+            return Err("Payload is not an object".to_string());
         }
         let value_obj = value.as_object_mut().unwrap();
-        if !value_obj.contains_key("name") || !value_obj.contains_key("date") {
-            return Err(());
+        if !value_obj.contains_key("name") || !value_obj.contains_key("owner_id") {
+            return Err("Payload does not contain all required fields".to_string());
         }
         event_data = Event {
             name: value_obj.get("name").unwrap().as_str().unwrap().to_string(),
-            date: value_obj.get("date").unwrap().as_str().unwrap().to_string(),
+            date: Utc::now(),
             id: Uuid::new_v4().as_simple().to_string(),
+            owner_id: value_obj
+                .get("owner_id")
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string(),
         };
         //TODO using get method above even though already checked for key existence
         println!("name: {} date: {}", event_data.name, event_data.date);
+        let connection = db::connect_db().await.unwrap();
+        let result = db::create_event(connection, &event_data).await;
+
+        if result.is_err() {
+            println!("{:?}", result.err().unwrap());
+            return Err("Error Creating Event".to_string());
+        }
     }
     Ok("Event created".to_string())
 }
