@@ -1,4 +1,4 @@
-use super::structs::{User, UserLogin};
+use super::structs::{Event, User, UserLogin};
 use dotenv::dotenv;
 use sqlx::{postgres::PgPoolOptions, Pool, Row};
 use std::env;
@@ -65,6 +65,8 @@ pub async fn login_user(
     if query1.is_ok() {
         let row = query1.unwrap();
         let pass = row.get::<String, &str>("password");
+        let userid = row.get::<String, &str>("id");
+        println!("id: {}", userid);
         if pass == user_login.password {
             return Ok("login successful".to_string());
         } else {
@@ -79,5 +81,5 @@ pub async fn login_user(
 }
 
 pub async fn create_event(conn: Pool<sqlx::Postgres>, event: &Event) -> Result<String, String> {
-    Ok("ok");
+    Ok("ok".to_string())
 }
