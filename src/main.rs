@@ -29,6 +29,8 @@ async fn main() {
         .route("/login", post(login))
         .route("/signup", post(sign_up))
         .route("/create_event", post(create_event))
+        .route("/join_event", post(join_event))
+        .route("/leave_event", post(leave_event))
         .fallback(fallback_handler);
 
     axum::Server::bind(&"127.0.0.1:3042".parse().unwrap())
@@ -175,4 +177,80 @@ async fn create_event(payload: Result<Json<Value>, JsonRejection>) -> Result<Str
         }
     }
     Ok("Event created".to_string())
+}
+
+async fn join_event(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
+    if let Ok(payload) = payload {
+        let event_id: String;
+        let user_id: String;
+        let mut value = json!(*payload);
+        //TODO check if the value is an object and return a proper error
+        if !value.is_object() {
+            return Err("Payload is not an object".to_string());
+        }
+        let value_obj = value.as_object_mut().unwrap();
+        if !value_obj.contains_key("event_id") || !value_obj.contains_key("user_id") {
+            return Err("Payload does not contain all required fields".to_string());
+        }
+        event_id = value_obj
+            .get("event_id")
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string();
+        user_id = value_obj
+            .get("user_id")
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string();
+        //TODO using get method above even though already checked for key existence
+        println!("event_id: {} user_id: {}", event_id, user_id);
+        let connection = db::connect_db().await.unwrap();
+        let result = db::join_event(connection, &event_id, &user_id).await;
+
+        if result.is_err() {
+            println!("{:?}", result.err().unwrap());
+            return Err("Error Joining Event".to_string());
+        }
+    }
+    Ok("Event joined".to_string())
+}
+
+async fn leave_event(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
+    if let Ok(payload) = payload {
+        let event_id: String;
+        let user_id: String;
+        let mut value = json!(*payload);
+        //TODO check if the value is an object and return a proper error
+        if !value.is_object() {
+            return Err("Payload is not an object".to_string());
+        }
+        let value_obj = value.as_object_mut().unwrap();
+        if !value_obj.contains_key("event_id") || !value_obj.contains_key("user_id") {
+            return Err("Payload does not contain all required fields".to_string());
+        }
+        event_id = value_obj
+            .get("event_id")
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string();
+        user_id = value_obj
+            .get("user_id")
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string();
+        //TODO using get method above even though already checked for key existence
+        println!("event_id: {} user_id: {}", event_id, user_id);
+        let connection = db::connect_db().await.unwrap();
+        let result = db::leave_event(connection, &event_id, &user_id).await;
+
+        if result.is_err() {
+            println!("{:?}", result.err().unwrap());
+            return Err("Error Leaving Event".to_string());
+        }
+    }
+    Ok("Event Left".to_string())
 }

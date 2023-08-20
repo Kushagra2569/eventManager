@@ -116,3 +116,44 @@ pub async fn create_event(conn: Pool<sqlx::Postgres>, event: &Event) -> Result<S
 
     Ok("ok".to_string())
 }
+
+pub async fn join_event(
+    conn: Pool<sqlx::Postgres>,
+    event_id: &str,
+    user_id: &str,
+) -> Result<String, String> {
+    let query1 = sqlx::query("INSERT INTO event_users (event_id, user_id) VALUES ($1, $2)")
+        .bind(&event_id)
+        .bind(&user_id)
+        .execute(&conn)
+        .await;
+
+    if query1.is_ok() {
+        return Ok("ok".to_string());
+    } else {
+        return Err("Error inserting event into event_users table".to_string());
+    }
+    //TODO add check to prevent owner from rejoining event
+}
+
+pub async fn leave_event(
+    conn: Pool<sqlx::Postgres>,
+    event_id: &str,
+    user_id: &str,
+) -> Result<String, String> {
+    let query1 = sqlx::query("DELETE FROM event_users WHERE user_id = ($1) AND event_id = ($2)")
+        .bind(&user_id)
+        .bind(&event_id)
+        .execute(&conn)
+        .await;
+
+    println!("query1: {:?}", query1);
+    if query1.is_ok() {
+        println!("query1 ok");
+        return Ok("ok".to_string());
+    } else {
+        println!("query1 err");
+        return Err("Error deleting event into event_users table".to_string());
+    }
+    //TODO add check to prevent owner from leaving event
+}
