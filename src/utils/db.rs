@@ -149,11 +149,9 @@ pub async fn leave_event(
 
     println!("query1: {:?}", query1);
     if query1.is_ok() {
-        println!("query1 ok");
         return Ok("ok".to_string());
     } else {
-        println!("query1 err");
-        return Err("Error deleting event into event_users table".to_string());
+        return Err("Error leaving event".to_string());
     }
     //TODO add check to prevent owner from leaving event
 }
