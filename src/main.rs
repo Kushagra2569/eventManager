@@ -51,6 +51,7 @@ pub async fn fallback_handler(uri: axum::http::Uri) -> impl axum::response::Into
 async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
     if let Ok(payload) = payload {
         let user_data: UserLogin;
+        let user: User;
         let mut value = json!(*payload);
         //TODO check if the value is an object and return a proper error
         if !value.is_object() {
@@ -85,6 +86,8 @@ async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, St
             return Err("Invalid credentials".to_string());
         }
         if result.is_ok() {
+            user = result.unwrap();
+            println!("fullname {}", user.fullname);
             return Ok("User logged in".to_string());
         }
     }

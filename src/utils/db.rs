@@ -56,7 +56,7 @@ pub async fn insert_user(
 pub async fn login_user(
     conn: Pool<sqlx::Postgres>,
     user_login: &UserLogin,
-) -> Result<String, String> {
+) -> Result<User, String> {
     let query1 = sqlx::query("SELECT * FROM userlogin WHERE username = $1")
         .bind(&user_login.username)
         .fetch_one(&conn)
@@ -68,7 +68,17 @@ pub async fn login_user(
         let userid = row.get::<String, &str>("id");
         println!("id: {}", userid);
         if pass == user_login.password {
-            return Ok("login successful".to_string());
+            let query2 = sqlx::query("SELECT * FROM users WHERE id = ($1)")
+                .bind(&userid)
+                .fetch_one(&conn)
+                .await;
+            let row2 = query2.unwrap();
+            let user = User {
+                id: userid.clone(),
+                fullname: row2.get::<String, &str>("full_name"),
+                role: row2.try_get_unchecked::<String, &str>("role").unwrap(),
+            };
+            return Ok(user);
         } else {
             return Err("password incorrect".to_string());
         }
