@@ -48,6 +48,7 @@ pub async fn fallback_handler(uri: axum::http::Uri) -> impl axum::response::Into
     )
 }
 
+//TODO return user struct from the api
 async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
     if let Ok(payload) = payload {
         let user_data: UserLogin;
