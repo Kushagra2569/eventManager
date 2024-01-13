@@ -48,6 +48,11 @@ pub async fn fallback_handler(uri: axum::http::Uri) -> impl axum::response::Into
     )
 }
 
+// Example login Payload
+// {
+//    "username": "username",
+//    "password": "password"
+//  }
 //TODO return user struct from the api
 async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
     if let Ok(payload) = payload {
@@ -96,6 +101,12 @@ async fn login(payload: Result<Json<Value>, JsonRejection>) -> Result<String, St
     Ok("User logged in".to_string())
 }
 
+//Example sign up Payload
+// {
+//   "username": "username",
+//   "email": "email",
+//   "password": "password"
+//   }
 async fn sign_up(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
     if let Ok(payload) = payload {
         let user_data: UserLogin;
@@ -147,6 +158,11 @@ async fn sign_up(payload: Result<Json<Value>, JsonRejection>) -> Result<String, 
     Ok("User Signed up".to_string())
 }
 
+//Example create event payload
+// {
+//  "name": "event name",
+//  "owner_id": "user id"
+//  }
 async fn create_event(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
     if let Ok(payload) = payload {
         let event_data: Event;
@@ -183,6 +199,8 @@ async fn create_event(payload: Result<Json<Value>, JsonRejection>) -> Result<Str
     Ok("Event created".to_string())
 }
 
+//Example join event Payload
+//{ "event_id": "event id", "user_id": "user id"}
 async fn join_event(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
     if let Ok(payload) = payload {
         let event_id: String;
@@ -221,6 +239,8 @@ async fn join_event(payload: Result<Json<Value>, JsonRejection>) -> Result<Strin
     Ok("Event joined".to_string())
 }
 
+//Example leave event payload
+//{ "event_id": "event id", "user_id": "user id"}
 async fn leave_event(payload: Result<Json<Value>, JsonRejection>) -> Result<String, String> {
     if let Ok(payload) = payload {
         let event_id: String;
