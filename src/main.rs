@@ -16,6 +16,7 @@ use serde_json::{json, Value};
 
 mod utils;
 use chrono::prelude::*;
+use std::net::SocketAddr;
 use utils::{
     db,
     structs::{Event, User, UserLogin},
@@ -24,6 +25,9 @@ use uuid::Uuid;
 
 #[tokio::main]
 async fn main() {
+    let server_addr = SocketAddr::from(([127, 0, 0, 1], 3042));
+    let listener = tokio::net::TcpListener::bind(server_addr).await.unwrap();
+
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
         .route("/login", post(login))
@@ -33,8 +37,7 @@ async fn main() {
         .route("/leave_event", post(leave_event))
         .fallback(fallback_handler);
 
-    axum::Server::bind(&"127.0.0.1:3042".parse().unwrap())
-        .serve(app.into_make_service())
+    axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
 }
